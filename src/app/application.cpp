@@ -97,6 +97,7 @@ Application::Application(QObject *parent)
     m_office = new OfficeService(m_config, this);
     m_focus = new FocusService(m_config, this);
     m_todo = new TodoService(this);
+    m_shelf = new ShelfService(this);
     m_shortcuts = new ShortcutService(m_config, this);
     connect(m_lock, &LockMonitor::lockedChanged, this, [this] { m_focus->locked(m_lock->locked()); });
     connect(m_focus, &FocusService::started, this, [this] {
@@ -115,6 +116,7 @@ Application::Application(QObject *parent)
         openSettings();
     });
     connect(m_ipc, &IpcService::shareRequested, m_share, &ShareService::offerPaths);
+    connect(m_ipc, &IpcService::keepRequested, m_shelf, &ShelfService::addPaths);
     connect(m_ipc, &IpcService::officeRequested, m_office, &OfficeService::toggle);
     connect(m_ipc, &IpcService::askRequested, m_ai, &AiService::ask);
     connect(m_ipc, &IpcService::assistantRequested, m_ai, &AiService::engage);

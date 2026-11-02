@@ -87,6 +87,11 @@ void IpcService::share(const QStringList &paths)
     Q_EMIT shareRequested(paths);
 }
 
+void IpcService::keep(const QStringList &paths)
+{
+    Q_EMIT keepRequested(paths);
+}
+
 void IpcService::assistant()
 {
     Q_EMIT assistantRequested();

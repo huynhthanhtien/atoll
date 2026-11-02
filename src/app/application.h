@@ -11,6 +11,7 @@
 // needs the complete types, not forward declarations.
 #include "focus/focusservice.h"
 #include "todo/todoservice.h"
+#include "shelf/shelfservice.h"
 #include "ai/aiservice.h"
 #include "app/shellwindow.h"
 #include "calendar/calendarservice.h"
@@ -51,6 +52,7 @@ class Application : public QObject
 
     Q_PROPERTY(FocusService *focus READ focus CONSTANT)
     Q_PROPERTY(TodoService *todo READ todo CONSTANT)
+    Q_PROPERTY(ShelfService *shelf READ shelf CONSTANT)
     Q_PROPERTY(Config *config READ config CONSTANT)
     Q_PROPERTY(ShellWindow *shell READ shell CONSTANT)
     Q_PROPERTY(OsdMonitor *osd READ osd CONSTANT)
@@ -102,6 +104,7 @@ public:
 
     FocusService *focus() const { return m_focus; }
     TodoService *todo() const { return m_todo; }
+    ShelfService *shelf() const { return m_shelf; }
     Config *config() const
     {
         return m_config;
@@ -218,6 +221,7 @@ private:
 
     FocusService *m_focus = nullptr;
     TodoService *m_todo = nullptr;
+    ShelfService *m_shelf = nullptr;
     Config *m_config = nullptr;
     ShellWindow *m_shell = nullptr;
     DBusMonitor *m_monitor = nullptr;

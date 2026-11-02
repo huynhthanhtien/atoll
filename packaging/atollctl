@@ -23,6 +23,7 @@ Usage: atollctl <command> [arguments]
   text <icon> <text>           show a one-line message
   progress <icon> <0-100> <t>  show a progress readout
   share <file> [file...]       offer files to nearby devices
+  keep <file> [file...]        hold files on the island to drag out later
   assistant                    open the assistant with an empty box
   ask <question>               put a question to the assistant
   screenshot [output|all]      take a picture of one screen, print its path
@@ -131,7 +132,7 @@ case "$command" in
         # quoting it.
         call ask "$*"
         ;;
-    share)
+    share|keep)
         [ $# -ge 1 ] || { usage; exit 1; }
         # gdbus wants one array literal, with every path quoted inside it.
         list=""
@@ -143,7 +144,7 @@ case "$command" in
             escaped=$(printf '%s' "$absolute" | sed "s/'/\\\\'/g")
             list="$list'$escaped',"
         done
-        call share "[${list%,}]"
+        call "$command" "[${list%,}]"
         ;;
     -h|--help|help) usage ;;
     *) usage; exit 1 ;;

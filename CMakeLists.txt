@@ -129,6 +129,7 @@ qt_add_executable(atoll
     src/media/lyricsservice.cpp    src/media/lyricsservice.h
     src/media/audiooutputs.cpp     src/media/audiooutputs.h
 
+    src/shelf/shelfservice.cpp     src/shelf/shelfservice.h
     src/share/sharecredentials.cpp src/share/sharecredentials.h
     src/share/sharediscovery.cpp   src/share/sharediscovery.h
     src/share/shareserver.cpp      src/share/shareserver.h
@@ -214,6 +215,7 @@ target_include_directories(atoll PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/media
     ${CMAKE_CURRENT_SOURCE_DIR}/src/office
     ${CMAKE_CURRENT_SOURCE_DIR}/src/share
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shelf
     ${CMAKE_CURRENT_SOURCE_DIR}/src/todo
     ${CMAKE_CURRENT_SOURCE_DIR}/src/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/wayland
@@ -249,6 +251,8 @@ qt_add_qml_module(atoll
         qml/views/CallToActionView.qml
         qml/views/LyricsView.qml
         qml/views/ShareView.qml
+        qml/views/DropChoiceView.qml
+        qml/views/ShelfView.qml
         qml/views/TodoView.qml
         qml/views/AiView.qml
         qml/AiGlowWindow.qml
@@ -286,6 +290,7 @@ qt_add_qml_module(atoll
         qml/components/RoundButton.qml
         qml/components/QuickToggle.qml
         qml/components/PillButton.qml
+        qml/components/ShelfBadge.qml
         qml/components/Ripple.qml
         qml/components/BloubBot.qml
         qml/components/EdgeGlow.qml
@@ -525,6 +530,11 @@ if(BUILD_TESTING)
     target_include_directories(atoll-todo-test PRIVATE src)
     target_link_libraries(atoll-todo-test PRIVATE Qt6::Core Qt6::Qml Qt6::Test)
     add_test(NAME todo-list COMMAND atoll-todo-test)
+    qt_add_executable(atoll-shelf-test tests/shelftest.cpp
+        src/shelf/shelfservice.cpp src/shelf/shelfservice.h)
+    target_include_directories(atoll-shelf-test PRIVATE src)
+    target_link_libraries(atoll-shelf-test PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Test)
+    add_test(NAME shelf-list COMMAND atoll-shelf-test)
 
     qt_add_executable(atoll-office-test tests/officetest.cpp
         src/office/claudeask.cpp      src/office/claudeask.h

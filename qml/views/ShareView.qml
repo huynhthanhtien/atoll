@@ -4,9 +4,9 @@ import QtQuick
 import Atoll
 
 /**
- * Sharing, in every state it can be in: a target while files are being dragged
- * over the island, a list of nearby devices once they have been dropped, the
- * transfer itself, and the same again in reverse for files arriving.
+ * Sharing, in every state it can be in: a list of nearby devices once files
+ * have been dropped, the transfer itself, and the same again in reverse for
+ * files arriving. The drop itself is DropChoiceView's.
  *
  * The protocol underneath is LocalSend. AirDrop is not an option on Linux -
  * it rides on Apple's own AWDL link layer, and the open re-implementations of
@@ -16,11 +16,8 @@ import Atoll
 Item {
     id: view
 
-    /** True while a drag is hovering the island, before anything is dropped. */
-    property bool dragging: false
-
     readonly property var share: App.share
-    readonly property string phase: dragging ? "drop" : share.state
+    readonly property string phase: share.state
 
     implicitWidth: Math.min(Cfg.maxWidth,
                             Math.max(300, (loader.item ? loader.item.implicitWidth : 0)
@@ -65,8 +62,6 @@ Item {
         anchors.centerIn: parent
         sourceComponent: {
             switch (view.phase) {
-            case "drop":
-                return dropTarget
             case "staged":
                 return picker
             case "incoming":
@@ -76,31 +71,6 @@ Item {
                 return transfer
             default:
                 return result
-            }
-        }
-    }
-
-    // ---- a drag is hovering ------------------------------------------------
-    Component {
-        id: dropTarget
-
-        Column {
-            spacing: 7
-
-            IconImage {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 26
-                height: 26
-                names: ["document-send", "emblem-shared", "folder-download"]
-            }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Drop to share")
-                color: Theme.foreground
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.size(12)
-                font.weight: Font.DemiBold
             }
         }
     }

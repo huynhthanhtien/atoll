@@ -107,7 +107,8 @@ QVariantMap Config::defaults()
     "sharing": true,
     "ai": true,
     "privacy": true,
-    "todo": true
+    "todo": true,
+    "shelf": true
   },
   "osd": {
     "timeout": 1700,

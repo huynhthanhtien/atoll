@@ -81,6 +81,10 @@ Item {
         anchors.centerIn: parent
         spacing: 8
 
+        ShelfBadge {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         BloubBot {
             anchors.verticalCenter: parent.verticalCenter
             visible: view.assistantBusy && Cfg.get("ai.avatar", true)

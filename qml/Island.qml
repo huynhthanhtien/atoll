@@ -104,10 +104,15 @@ Item {
     /** A drag hovering the island, or a transfer in either direction. */
     readonly property bool sharingEnabled: Cfg.modules.sharing ?? true
     readonly property bool dragActive: dropZone.containsDrag
-    readonly property bool sharing: sharingEnabled && (dragActive || App.share.state !== "idle")
+    readonly property bool sharing: sharingEnabled && App.share.state !== "idle"
+    /** Files parked on the island; resting the pointer on it opens them. */
+    readonly property bool shelfEnabled: Cfg.modules.shelf ?? true
+    readonly property bool shelfAvailable: shelfEnabled && App.shelf.count > 0 && !locked
+    property bool shelfOpen: false
     readonly property bool mediaPlaying: hasMedia && App.media.active.playing
     readonly property bool hovered: hoverHandler.hovered
     readonly property bool cleanSurface: mode === "focusDetail" || (mode === "media" && hovered) || mode === "office"
+                                         || mode === "shelf"
 
     // ---- lock screen -----------------------------------------------------
     //
@@ -135,14 +140,20 @@ Item {
         if (officeActive) {
             return "office"
         }
-        // Sharing is next: it is either a drag the user is holding over the
-        // island right now, or a stranger waiting for an answer.
+        // A drag the user is holding over the island right now.
+        if (dragActive) {
+            return "drop"
+        }
+        // A transfer, or a stranger waiting for an answer.
         if (sharing) {
             return "share"
         }
         if (focusExpanded && !locked) return "focusDetail"
         if (expanded) {
             return "expanded"
+        }
+        if (shelfOpen && shelfAvailable) {
+            return "shelf"
         }
         if (!App.busTapActive && busWarning.running) {
             return "warning"
@@ -156,7 +167,9 @@ Item {
         if (mediaTimer.running && !lockedNoMedia) {
             return "media"
         }
-        if (hovered && hasMedia && !lockedNoMedia && Cfg.control("hover") === "peek") {
+        // Not with files parked: resting the pointer is how those are reached,
+        // and the player would flash up on the way to them.
+        if (hovered && hasMedia && !lockedNoMedia && !shelfAvailable && Cfg.control("hover") === "peek") {
             return "media"
         }
         if (App.focus.state.active) return "focus"
@@ -262,14 +275,78 @@ Item {
                 return
             }
             if (action === "expand") {
-                island.expanded = island.expanded || island.canExpand
+                // The shelf answers to the same gesture, and a click still
+                // gets the dashboard from there.
+                if (!island.shelfAvailable) {
+                    island.expanded = island.expanded || island.canExpand
+                }
                 return
             }
             island.runAction(action, "hover")
         }
     }
 
+    Timer {
+        id: shelfOpenTimer
+        interval: Math.max(120, Cfg.hoverDelay)
+        onTriggered: island.shelfOpen = island.hovered && island.shelfAvailable
+    }
+    // Long enough for the spring to overshoot and come back without the pointer
+    // falling off the edge and closing the thing it is reaching for.
+    Timer {
+        id: shelfCloseTimer
+        interval: 320
+        onTriggered: {
+            if (!island.hovered && !App.shelf.dragging) {
+                island.shelfOpen = false
+            }
+        }
+    }
+    Timer {
+        id: shelfPeekTimer
+        interval: 5000
+        onTriggered: {
+            if (!island.hovered && !App.shelf.dragging) {
+                island.shelfOpen = false
+            }
+        }
+    }
+    // After a drop the island shrinks around the new file before anything else,
+    // even with the pointer still on it: that is the confirmation.
+    Timer {
+        id: shelfSettleTimer
+        interval: 900
+        onTriggered: island.shelfOpen = island.hovered && island.shelfAvailable
+    }
+
+    Connections {
+        target: App.shelf
+
+        function onCountChanged() {
+            if (App.shelf.count === 0) {
+                island.shelfOpen = false
+            }
+        }
+        function onDraggingChanged() {
+            if (!App.shelf.dragging && !island.hovered) {
+                shelfCloseTimer.restart()
+            }
+        }
+    }
+
     onHoveredChanged: {
+        if (hovered) {
+            shelfCloseTimer.stop()
+            if (shelfAvailable && !shelfOpen && !shelfSettleTimer.running) {
+                shelfOpenTimer.restart()
+            }
+        } else {
+            shelfOpenTimer.stop()
+            if (shelfOpen) {
+                shelfCloseTimer.restart()
+            }
+        }
+
         const hoverAction = Cfg.control("hover")
         if (hovered && hoverAction !== "none" && hoverAction !== "peek") {
             hoverTimer.restart()
@@ -435,6 +512,10 @@ Item {
                 return aiComponent
             case "office":
                 return officeComponent
+            case "drop":
+                return dropChoiceComponent
+            case "shelf":
+                return shelfComponent
             case "share":
                 return shareComponent
             case "expanded":
@@ -602,13 +683,29 @@ Item {
         id: hoverHandler
     }
 
-    // Files dragged onto the island are offered to whoever is nearby. The
-    // island itself is the drop target, so it has to be the thing that grows
-    // under the pointer - which is what turning the mode into "share" does.
+    // Files dragged onto the island are parked on it or offered to whoever is
+    // nearby, depending on which half they are let go over. The island itself
+    // is the drop target, so it has to be the thing that grows under the
+    // pointer - which is what turning the mode into "drop" does.
     DropArea {
         id: dropZone
+
+        /** Both halves only exist when both things are switched on. */
+        readonly property string choice: {
+            if (!island.sharingEnabled) {
+                return "keep"
+            }
+            if (!island.shelfEnabled) {
+                return "share"
+            }
+            return drag.x < width / 2 ? "keep" : "share"
+        }
+
         anchors.fill: parent
-        enabled: island.sharingEnabled
+        // Neither view on top of these has anywhere to show the choice, and a
+        // file picked up off the shelf should not land straight back on it.
+        enabled: (island.sharingEnabled || island.shelfEnabled)
+                 && !island.aiActive && !island.officeActive && !App.shelf.dragging
         keys: ["text/uri-list"]
 
         onEntered: drag => {
@@ -616,14 +713,23 @@ Item {
                 drag.accepted = false
                 return
             }
-            App.share.probe()
+            if (island.sharingEnabled) {
+                App.share.probe()
+            }
         }
 
         onDropped: drop => {
             if (!drop.hasUrls) {
                 return
             }
-            App.share.offer(drop.urls)
+            if (choice === "keep") {
+                App.shelf.add(drop.urls)
+                island.shelfOpen = false
+                shelfOpenTimer.stop()
+                shelfSettleTimer.restart()
+            } else {
+                App.share.offer(drop.urls)
+            }
             drop.accept(Qt.CopyAction)
         }
     }
@@ -663,8 +769,16 @@ Item {
                 App.share.dismiss()
             }
             expanded = false
+            shelfOpen = false
             notificationSticky = false
             notificationTimer.stop()
+            return
+        case "shelf":
+            shelfOpen = !shelfOpen && shelfAvailable
+            // Nothing else would close it if the pointer never touches it.
+            if (shelfOpen && !hovered) {
+                shelfPeekTimer.restart()
+            }
             return
         case "settings":
             App.openSettings()
@@ -867,6 +981,7 @@ Item {
         enabled: (Cfg.control("scrollUp") !== "none" || Cfg.control("scrollDown") !== "none")
                  && island.mode !== "ai" && island.mode !== "office"
                  && island.mode !== "expanded" && island.mode !== "focusDetail"
+                 && island.mode !== "shelf"
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: event => {
             if (event.angleDelta.y === 0) {
@@ -953,9 +1068,21 @@ Item {
 
     Component {
         id: shareComponent
-        ShareView {
-            dragging: island.dragActive
+        ShareView {}
+    }
+
+    Component {
+        id: dropChoiceComponent
+        DropChoiceView {
+            canKeep: island.shelfEnabled
+            canShare: island.sharingEnabled
+            choice: dropZone.choice
         }
+    }
+
+    Component {
+        id: shelfComponent
+        ShelfView {}
     }
 
     Component {

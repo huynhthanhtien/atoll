@@ -24,6 +24,7 @@ Item {
     Row {
         id: compactContent
         visible: root.compact; anchors.centerIn: parent; spacing: 12
+        ShelfBadge { anchors.verticalCenter: parent.verticalCenter }
         Rectangle {
             width: 6; height: 6; radius: 3; color: root.accent; anchors.verticalCenter: parent.verticalCenter
             SequentialAnimation on opacity {

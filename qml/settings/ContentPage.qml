@@ -134,6 +134,13 @@ SettingsPage {
         }
 
         BoolSetting {
+            label: qsTr("Kept files")
+            description: qsTr("Drop files on the island to hold them for a moment, then drag them out into another window.")
+            key: "modules.shelf"
+            defaultValue: true
+        }
+
+        BoolSetting {
             label: qsTr("Lyrics")
             key: "modules.lyrics"
             defaultValue: true

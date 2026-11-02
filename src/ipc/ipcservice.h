@@ -61,6 +61,8 @@ public Q_SLOTS:
     Q_SCRIPTABLE void showProgress(const QString &icon, int percent, const QString &text);
     /** Offer these files to nearby devices, as if they had been dropped. */
     Q_SCRIPTABLE void share(const QStringList &paths);
+    /** Park these files on the island, as if they had been dropped on it. */
+    Q_SCRIPTABLE void keep(const QStringList &paths);
     /** Open the assistant with an empty box, as a long press does. */
     Q_SCRIPTABLE void assistant();
     /** Put a question to the assistant, as if it had been typed on the island. */
@@ -133,6 +135,7 @@ Q_SIGNALS:
     void textRequested(const QString &icon, const QString &text);
     void progressRequested(const QString &icon, int percent, const QString &text);
     void shareRequested(const QStringList &paths);
+    void keepRequested(const QStringList &paths);
     void assistantRequested();
     void askRequested(const QString &prompt);
     void reloadRequested();

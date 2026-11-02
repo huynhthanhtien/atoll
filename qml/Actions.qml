@@ -24,6 +24,7 @@ QtObject {
         { id: "peek", label: qsTr("Peek at what is playing"), group: qsTr("Island"), icon: "peek", shortcut: false },
         { id: "dismiss", label: qsTr("Dismiss current activity"), group: qsTr("Island"), icon: "dismiss", shortcut: true },
         { id: "settings", label: qsTr("Open settings"), group: qsTr("Island"), icon: "settings", shortcut: true },
+        { id: "shelf", label: qsTr("Show kept files"), group: qsTr("Island"), icon: "expand", shortcut: true },
 
         { id: "office", label: qsTr("Claude office"), group: qsTr("Claude"), icon: "office", shortcut: true },
         { id: "officeOrPlayPause", label: qsTr("Claude office, else play / pause"), group: qsTr("Claude"), icon: "office", shortcut: true },
