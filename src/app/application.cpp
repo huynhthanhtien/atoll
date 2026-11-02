@@ -216,6 +216,13 @@ void Application::onBusMessage(const DBusMessageInfo &message)
     m_notificationMonitor->handleMessage(message);
 }
 
+void Application::switchDesktop(bool next)
+{
+    auto message = QDBusMessage::createMethodCall(u"org.kde.KWin"_s, u"/KWin"_s, u"org.kde.KWin"_s,
+                                                  next ? u"nextDesktop"_s : u"previousDesktop"_s);
+    QDBusConnection::sessionBus().call(message, QDBus::NoBlock);
+}
+
 void Application::adjustVolume(int deltaPercent)
 {
     const QString wpctl = QStandardPaths::findExecutable(u"wpctl"_s);

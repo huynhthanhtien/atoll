@@ -695,6 +695,12 @@ Item {
         case "volumeDown":
             App.adjustVolume(-Cfg.volumeStep)
             return
+        case "desktopNext":
+            App.switchDesktop(true)
+            return
+        case "desktopPrevious":
+            App.switchDesktop(false)
+            return
         case "focus":
             if (App.focus.state.active) {
                 App.focus.stop()
@@ -850,6 +856,7 @@ Item {
         readonly property int gestureGap: 400
         property real lastEvent: 0
         property string lastAction: ""
+        property real desktopDelta: 0
 
         enabled: (Cfg.control("scrollUp") !== "none" || Cfg.control("scrollDown") !== "none")
                  && island.mode !== "ai" && island.mode !== "office"
@@ -868,6 +875,15 @@ Item {
             const fresh = now - lastEvent > gestureGap || action !== lastAction
             lastEvent = now
             lastAction = action
+            if (action === "desktopNext" || action === "desktopPrevious") {
+                // One workspace per wheel notch (120 units); touchpads add up to it.
+                desktopDelta = (fresh ? 0 : desktopDelta) + Math.abs(event.angleDelta.y)
+                while (desktopDelta >= 120) {
+                    desktopDelta -= 120
+                    island.runAction(action, "scroll")
+                }
+                return
+            }
             if (fresh) {
                 island.runAction(action, "scroll")
             }

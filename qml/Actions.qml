@@ -35,6 +35,8 @@ QtObject {
         { id: "volumeUp", label: qsTr("Volume up"), group: qsTr("Media"), icon: "volumeUp", shortcut: true },
         { id: "volumeDown", label: qsTr("Volume down"), group: qsTr("Media"), icon: "volumeDown", shortcut: true },
 
+        { id: "desktopNext", label: qsTr("Next workspace"), group: qsTr("System"), icon: "expand", shortcut: true },
+        { id: "desktopPrevious", label: qsTr("Previous workspace"), group: qsTr("System"), icon: "collapse", shortcut: true },
         { id: "focus", label: qsTr("Start or stop focus"), group: qsTr("System"), icon: "focus", shortcut: true },
         { id: "dnd", label: qsTr("Do not disturb"), group: qsTr("System"), icon: "dnd", shortcut: true }
     ]

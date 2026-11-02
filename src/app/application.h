@@ -191,6 +191,7 @@ public:
     /** Nudge the default sink and echo the result through the island's OSD. */
     Q_INVOKABLE void adjustVolume(int deltaPercent);
     Q_INVOKABLE void toggleMute();
+    Q_INVOKABLE void switchDesktop(bool next);
     Q_INVOKABLE void openUrl(const QString &url);
     /** Put text on the clipboard, for the settings window's copy buttons. */
     Q_INVOKABLE void copyText(const QString &text);
