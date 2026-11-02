@@ -236,12 +236,18 @@ Item {
         id: leaveTimer
         interval: 420
         onTriggered: {
-            if ((island.expanded || island.focusExpanded) && !island.hovered && Cfg.collapseOnLeave
-                    && !(island.targetWindow && island.targetWindow.activeFocusItem
-                         && island.targetWindow.activeFocusItem.objectName === "focusThought")) {
-                island.expanded = false
-                island.focusExpanded = false
+            if (!(island.expanded || island.focusExpanded) || island.hovered || !Cfg.collapseOnLeave) {
+                return
             }
+            // Not out from under someone typing; look again once they are done.
+            const typingIn = island.targetWindow && island.targetWindow.activeFocusItem
+                             ? island.targetWindow.activeFocusItem.objectName : ""
+            if (typingIn === "focusThought" || typingIn === "todoInput") {
+                restart()
+                return
+            }
+            island.expanded = false
+            island.focusExpanded = false
         }
     }
 
@@ -939,6 +945,7 @@ Item {
     Component {
         id: expandedComponent
         ExpandedView {
+            keyboardWindow: island.targetWindow
             onCollapseRequested: island.expanded = false
             onFocusRequested: { island.focusExpanded = true; island.expanded = false }
         }

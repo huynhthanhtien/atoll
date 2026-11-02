@@ -106,7 +106,8 @@ QVariantMap Config::defaults()
     "lyrics": true,
     "sharing": true,
     "ai": true,
-    "privacy": true
+    "privacy": true,
+    "todo": true
   },
   "osd": {
     "timeout": 1700,

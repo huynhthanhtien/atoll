@@ -76,6 +76,7 @@ set(QT_QML_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/qml)
 qt_add_executable(atoll
     src/main.cpp
     src/focus/focusservice.cpp src/focus/focusservice.h
+    src/todo/todoservice.cpp src/todo/todoservice.h
 
     src/app/application.cpp        src/app/application.h
     src/app/shellwindow.cpp        src/app/shellwindow.h
@@ -213,6 +214,7 @@ target_include_directories(atoll PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/media
     ${CMAKE_CURRENT_SOURCE_DIR}/src/office
     ${CMAKE_CURRENT_SOURCE_DIR}/src/share
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/todo
     ${CMAKE_CURRENT_SOURCE_DIR}/src/system
     ${CMAKE_CURRENT_SOURCE_DIR}/src/wayland
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -247,6 +249,7 @@ qt_add_qml_module(atoll
         qml/views/CallToActionView.qml
         qml/views/LyricsView.qml
         qml/views/ShareView.qml
+        qml/views/TodoView.qml
         qml/views/AiView.qml
         qml/AiGlowWindow.qml
         qml/office/OfficeArt.qml
@@ -517,6 +520,11 @@ if(BUILD_TESTING)
     target_include_directories(atoll-focus-test PRIVATE src)
     target_link_libraries(atoll-focus-test PRIVATE Qt6::Core Qt6::Qml Qt6::Multimedia Qt6::Test)
     add_test(NAME focus-lifecycle COMMAND atoll-focus-test)
+    qt_add_executable(atoll-todo-test tests/todotest.cpp
+        src/todo/todoservice.cpp src/todo/todoservice.h)
+    target_include_directories(atoll-todo-test PRIVATE src)
+    target_link_libraries(atoll-todo-test PRIVATE Qt6::Core Qt6::Qml Qt6::Test)
+    add_test(NAME todo-list COMMAND atoll-todo-test)
 
     qt_add_executable(atoll-office-test tests/officetest.cpp
         src/office/claudeask.cpp      src/office/claudeask.h

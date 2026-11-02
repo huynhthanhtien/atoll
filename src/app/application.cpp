@@ -31,6 +31,7 @@
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QDBusMessage>
+#include <QDBusVariant>
 #include <QDesktopServices>
 #include <QGuiApplication>
 #include <QProcess>
@@ -95,6 +96,7 @@ Application::Application(QObject *parent)
     m_privacy = new PrivacyMonitor(m_config, this);
     m_office = new OfficeService(m_config, this);
     m_focus = new FocusService(m_config, this);
+    m_todo = new TodoService(this);
     m_shortcuts = new ShortcutService(m_config, this);
     connect(m_lock, &LockMonitor::lockedChanged, this, [this] { m_focus->locked(m_lock->locked()); });
     connect(m_focus, &FocusService::started, this, [this] {
@@ -218,9 +220,30 @@ void Application::onBusMessage(const DBusMessageInfo &message)
 
 void Application::switchDesktop(bool next)
 {
-    auto message = QDBusMessage::createMethodCall(u"org.kde.KWin"_s, u"/KWin"_s, u"org.kde.KWin"_s,
-                                                  next ? u"nextDesktop"_s : u"previousDesktop"_s);
-    QDBusConnection::sessionBus().call(message, QDBus::NoBlock);
+    // KWin's own nextDesktop/previousDesktop follow the wrap-around setting, so
+    // the target is worked out here to stop at the first and last workspace.
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    const QDBusMessage current = bus.call(QDBusMessage::createMethodCall(u"org.kde.KWin"_s, u"/KWin"_s, u"org.kde.KWin"_s,
+                                                                         u"currentDesktop"_s),
+                                          QDBus::Block, 500);
+    auto countCall = QDBusMessage::createMethodCall(u"org.kde.KWin"_s, u"/VirtualDesktopManager"_s,
+                                                    u"org.freedesktop.DBus.Properties"_s, u"Get"_s);
+    countCall << u"org.kde.KWin.VirtualDesktopManager"_s << u"count"_s;
+    const QDBusMessage count = bus.call(countCall, QDBus::Block, 500);
+    if (current.type() != QDBusMessage::ReplyMessage || current.arguments().isEmpty()
+        || count.type() != QDBusMessage::ReplyMessage || count.arguments().isEmpty()) {
+        return;
+    }
+
+    const int target = current.arguments().constFirst().toInt() + (next ? 1 : -1);
+    const int last = count.arguments().constFirst().value<QDBusVariant>().variant().toInt();
+    if (target < 1 || target > last) {
+        return;
+    }
+
+    auto message = QDBusMessage::createMethodCall(u"org.kde.KWin"_s, u"/KWin"_s, u"org.kde.KWin"_s, u"setCurrentDesktop"_s);
+    message << target;
+    bus.call(message, QDBus::Block, 500);
 }
 
 void Application::adjustVolume(int deltaPercent)

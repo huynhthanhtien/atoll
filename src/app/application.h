@@ -10,6 +10,7 @@
 // Every backend below is exposed as a Q_PROPERTY, and the meta type system
 // needs the complete types, not forward declarations.
 #include "focus/focusservice.h"
+#include "todo/todoservice.h"
 #include "ai/aiservice.h"
 #include "app/shellwindow.h"
 #include "calendar/calendarservice.h"
@@ -49,6 +50,7 @@ class Application : public QObject
     QML_SINGLETON
 
     Q_PROPERTY(FocusService *focus READ focus CONSTANT)
+    Q_PROPERTY(TodoService *todo READ todo CONSTANT)
     Q_PROPERTY(Config *config READ config CONSTANT)
     Q_PROPERTY(ShellWindow *shell READ shell CONSTANT)
     Q_PROPERTY(OsdMonitor *osd READ osd CONSTANT)
@@ -99,6 +101,7 @@ public:
     void start();
 
     FocusService *focus() const { return m_focus; }
+    TodoService *todo() const { return m_todo; }
     Config *config() const
     {
         return m_config;
@@ -214,6 +217,7 @@ private:
     void reportVolume();
 
     FocusService *m_focus = nullptr;
+    TodoService *m_todo = nullptr;
     Config *m_config = nullptr;
     ShellWindow *m_shell = nullptr;
     DBusMonitor *m_monitor = nullptr;

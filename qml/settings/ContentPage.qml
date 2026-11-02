@@ -185,6 +185,13 @@ SettingsPage {
             description: qsTr("Upcoming events in the dashboard and resting island.")
             key: "modules.calendar"
             defaultValue: true
+        }
+
+        BoolSetting {
+            label: qsTr("To-do list")
+            description: qsTr("A Todo tab in the dashboard. It is hidden while the session is locked.")
+            key: "modules.todo"
+            defaultValue: true
             last: true
         }
     }

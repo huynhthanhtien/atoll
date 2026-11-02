@@ -9,9 +9,9 @@ import Atoll
  * seek bar, the notification backlog, and the handful of toggles worth having
  * one click away.
  *
- * When the calendar module is configured, a tab bar appears so the user can
- * switch between the dashboard ("Now") and a full view of today's events
- * ("Calendar").
+ * A tab bar switches between the dashboard ("Now"), a full view of today's
+ * events ("Calendar") and the to-do list ("Todo"), for whichever of those
+ * modules are on.
  */
 Item {
     id: view
@@ -23,10 +23,24 @@ Item {
                                           || App.lyrics.state === "loading")
     readonly property bool calendarEnabled: Cfg.modules.calendar !== false
 
-    // Which tab is active: 0 = Now, 1 = Calendar.
-    property int selectedTab: 0
-    // so each section can gate on a single boolean.
-    readonly property bool showingCalendar: calendarEnabled && selectedTab === 1
+    // Hidden while locked: the list is exactly what a passer-by should not read.
+    readonly property bool todoEnabled: (Cfg.modules.todo ?? true) && !App.lock.locked
+
+    /** The surface the Todo tab asks for the keyboard on. */
+    property var keyboardWindow: null
+
+    readonly property var tabs: {
+        const list = [{ key: "now", label: qsTr("Now") }]
+        if (calendarEnabled) list.push({ key: "calendar", label: qsTr("Calendar") })
+        if (todoEnabled) list.push({ key: "todo", label: qsTr("Todo") })
+        return list
+    }
+    property string selectedTab: "now"
+    // So each section can gate on a single boolean. A tab whose module goes away
+    // falls back to Now.
+    readonly property bool showingCalendar: calendarEnabled && selectedTab === "calendar"
+    readonly property bool showingTodo: todoEnabled && selectedTab === "todo"
+    readonly property bool showingNow: !showingCalendar && !showingTodo
 
     signal collapseRequested()
     signal focusRequested()
@@ -143,10 +157,10 @@ Item {
                 }
             }
 
-            // ---- tab bar (Now | Calendar) -------------------------------------
-            // Only shown when the calendar service is configured.
+            // ---- tab bar ------------------------------------------------------
+            // Only shown when there is more than one tab to choose from.
             Rectangle {
-                visible: view.calendarEnabled
+                visible: view.tabs.length > 1
                 width: parent.width
                 height: 30
                 radius: 10
@@ -158,16 +172,19 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: [qsTr("Now"), qsTr("Calendar")]
+                        model: view.tabs
 
                         delegate: Rectangle {
-                            required property string modelData
-                            required property int index
+                            required property var modelData
 
-                            width: (parent.width - 3) / 2
+                            readonly property bool selected: modelData.key === "now"
+                                                             ? view.showingNow
+                                                             : view.selectedTab === modelData.key
+
+                            width: (parent.width - 3 * (view.tabs.length - 1)) / view.tabs.length
                             height: parent.height
                             radius: 8
-                            color: view.selectedTab === index
+                            color: selected
                                    ? Theme.tint(0.12)
                                    : "transparent"
 
@@ -177,13 +194,13 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData
-                                color: view.selectedTab === index
+                                text: modelData.label
+                                color: selected
                                        ? Theme.foreground
                                        : Theme.muted
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.size(12)
-                                font.weight: view.selectedTab === index
+                                font.weight: selected
                                              ? Font.DemiBold : Font.Normal
 
                                 Behavior on color {
@@ -194,7 +211,7 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: view.selectedTab = index
+                                onClicked: view.selectedTab = modelData.key
                             }
                         }
                     }
@@ -203,12 +220,12 @@ Item {
 
             AudioOutputPicker {
                 width: parent.width
-                visible: !view.showingCalendar && !App.lock.locked
+                visible: view.showingNow && !App.lock.locked
             }
 
             // ---- now playing --------------------------------------------------
             Rectangle {
-                visible: !view.showingCalendar && view.hasMedia
+                visible: view.showingNow && view.hasMedia
                 width: parent.width
                 height: 108
                 radius: 16
@@ -380,7 +397,7 @@ Item {
 
             // ---- lyrics -------------------------------------------------------
             Rectangle {
-                visible: !view.showingCalendar && view.hasLyrics
+                visible: view.showingNow && view.hasLyrics
                 width: parent.width
                 height: visible ? lyrics.implicitHeight + 24 : 0
                 radius: 16
@@ -402,7 +419,7 @@ Item {
                 width: parent.width
                 readonly property int rows: App.notifications.count
                 height: rows > 0 ? rows * 52 + (rows - 1) * 6 : 0
-                visible: !view.showingCalendar && rows > 0
+                visible: view.showingNow && rows > 0
 
                 ListView {
                     id: history
@@ -516,7 +533,7 @@ Item {
                     return list
                 }
 
-                visible: !view.showingCalendar && (Cfg.modules.privacy ?? true) && indicators.length > 0
+                visible: view.showingNow && (Cfg.modules.privacy ?? true) && indicators.length > 0
                 width: parent.width
                 height: visible ? privacyColumn.implicitHeight + 20 : 0
                 radius: 16
@@ -567,7 +584,7 @@ Item {
             // A Flow rather than a Row: with every module on, one more toggle
             // than fits simply wraps to a second line instead of falling off.
             Flow {
-                visible: !view.showingCalendar
+                visible: view.showingNow
                 width: parent.width
                 spacing: 8
 
@@ -631,7 +648,7 @@ Item {
                 readonly property bool available: (Cfg.modules.bluetooth ?? true) && App.bluetooth.present
                                                   && Cfg.get("bluetooth.showInExpanded", false)
                                                   && (App.bluetooth.powered || App.bluetooth.connectedCount > 0)
-                visible: !view.showingCalendar && available
+                visible: view.showingNow && available
                 width: parent.width
                 height: visible ? bluetoothBody.implicitHeight + 20 : 0
                 radius: 16
@@ -812,6 +829,13 @@ Item {
                         font.pixelSize: Theme.size(10)
                     }
                 }
+            }
+
+            // ---- todo tab -----------------------------------------------------
+            TodoView {
+                visible: view.showingTodo
+                width: parent.width
+                keyboardWindow: view.keyboardWindow
             }
 
             // ---- calendar tab: today's events ---------------------------------
