@@ -77,7 +77,10 @@ Q_SIGNALS:
     void dismissed();
 
 private:
+    /** An event that came from Plasma: show it here, and take Plasma's popup away. */
     void emitEvent(const QString &kind, const QString &icon, const QString &label, int percent, int maxPercent);
+    void publish(const QString &kind, const QString &icon, const QString &label, int percent, int maxPercent);
+    void hidePlasmaPopup();
     static QString volumeIcon(int percent, int maxPercent);
 
     Config *m_config;

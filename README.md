@@ -244,7 +244,10 @@ and it does not replace Plasma's OSD:
 
 - **OSD events** are read by watching the method calls Plasma already sends to
   `org.kde.osdService`. That means hardware keys, third-party mixers and
-  Plasma's own applets all reach the island without polling PipeWire.
+  Plasma's own applets all reach the island without polling PipeWire. Plasma's
+  popup is closed as each one arrives, so the two do not show the same thing
+  twice; `osd.hidePlasmaPopup` turns that off, and with Atoll stopped or
+  uninstalled the popup is back with nothing to undo.
 - **Notifications** are read the same way, by asking the bus daemon to make
   Atoll a monitor. Your real daemon — Plasma's, dunst, whatever you run —
   keeps doing its job; Atoll mirrors it. Pairing each observed `Notify` call

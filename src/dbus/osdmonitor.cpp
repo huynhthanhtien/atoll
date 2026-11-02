@@ -9,6 +9,9 @@
 
 #include <KLocalizedString>
 
+#include <QDBusConnection>
+#include <QDBusMessage>
+
 using namespace Qt::StringLiterals;
 
 namespace
@@ -43,6 +46,29 @@ QString OsdMonitor::volumeIcon(int percent, int maxPercent)
 }
 
 void OsdMonitor::emitEvent(const QString &kind, const QString &icon, const QString &label, int percent, int maxPercent)
+{
+    publish(kind, icon, label, percent, maxPercent);
+    hidePlasmaPopup();
+}
+
+void OsdMonitor::hidePlasmaPopup()
+{
+    if (!m_config->value(u"osd.hidePlasmaPopup"_s, true).toBool()) {
+        return;
+    }
+    // Asking at the moment of each event, rather than turning Plasma's OSD off
+    // in its settings, leaves nothing behind: with Atoll stopped or removed
+    // nobody asks any more and the popup is simply back. The bus keeps this
+    // call behind the one that opened the popup, so it cannot arrive first.
+    QDBusMessage hide = QDBusMessage::createMethodCall(u"org.kde.plasmashell"_s,
+                                                       u"/org/kde/osdService"_s,
+                                                       OsdInterface,
+                                                       u"hide"_s);
+    hide.setAutoStartService(false);
+    QDBusConnection::sessionBus().send(hide);
+}
+
+void OsdMonitor::publish(const QString &kind, const QString &icon, const QString &label, int percent, int maxPercent)
 {
     m_kind = kind;
     m_icon = icon;
@@ -194,7 +220,11 @@ bool OsdMonitor::handleMessage(const DBusMessageInfo &message)
         return true;
     }
     if (member == u"hide"_s) {
-        Q_EMIT dismissed();
+        // The tap also sees the hide sent by hidePlasmaPopup(); taking that one
+        // for Plasma's would close the island's readout along with the popup.
+        if (message.sender != QDBusConnection::sessionBus().baseService()) {
+            Q_EMIT dismissed();
+        }
         return true;
     }
 
@@ -203,10 +233,10 @@ bool OsdMonitor::handleMessage(const DBusMessageInfo &message)
 
 void OsdMonitor::showText(const QString &icon, const QString &text)
 {
-    emitEvent(u"text"_s, icon, text, -1, 100);
+    publish(u"text"_s, icon, text, -1, 100);
 }
 
 void OsdMonitor::showProgress(const QString &icon, int percent, const QString &text)
 {
-    emitEvent(u"progress"_s, icon, text, qBound(0, percent, 100), 100);
+    publish(u"progress"_s, icon, text, qBound(0, percent, 100), 100);
 }

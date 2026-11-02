@@ -275,6 +275,13 @@ SettingsPage {
             label: qsTr("Include media player volume")
             key: "osd.showMediaPlayerVolume"
             defaultValue: true
+        }
+
+        BoolSetting {
+            label: qsTr("Hide Plasma's popup")
+            description: qsTr("Closes Plasma's own popup whenever the island shows the same thing. It comes back by itself if Atoll is not running.")
+            key: "osd.hidePlasmaPopup"
+            defaultValue: true
             last: true
         }
     }

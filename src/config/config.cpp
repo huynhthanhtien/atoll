@@ -110,7 +110,8 @@ QVariantMap Config::defaults()
   },
   "osd": {
     "timeout": 1700,
-    "showMediaPlayerVolume": true
+    "showMediaPlayerVolume": true,
+    "hidePlasmaPopup": true
   },
   "notifications": {
     "timeout": 5000,
