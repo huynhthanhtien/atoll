@@ -10,6 +10,11 @@
 </p>
 
 <p align="center">
+  <i>A fork of <a href="https://github.com/jojo2k7/atoll">jojo2k7/atoll</a>, with a few additions of its own.</i>
+</p>
+
+<p align="center">
+  <a href="#what-this-fork-adds">What this fork adds</a> &nbsp;·&nbsp;
   <a href="#install">Install</a> &nbsp;·&nbsp;
   <a href="#everything-at-a-glance">Features</a> &nbsp;·&nbsp;
   <a href="#controls">Controls</a> &nbsp;·&nbsp;
@@ -31,6 +36,24 @@ When nothing is going on, it shrinks back to the clock.
 It is a native Qt 6 / QML application on `wlr-layer-shell` - no Quickshell, no
 AGS, no Hyprland - built to feel at home on Plasma. Every picture on this page
 was taken on a real Plasma 6 desktop, not in a mock-up.
+
+<br>
+
+## What this fork adds
+
+This fork is based on upstream Atoll 0.3.0, and everything not listed here is
+upstream's work. Its additions:
+
+| | |
+|---|---|
+| **[Kept files](#keeping-files-on-the-island)** | Drop files on the island to hold them, move to another window, and drag them out again. |
+| **[To-do list](#to-do-list)** | A **Todo** tab on the dashboard, kept on disk. |
+| **One popup, not two** | Plasma's own volume and brightness popup closes when the island shows the same thing, and comes back by itself when Atoll is not running. Turn it off with `osd.hidePlasmaPopup`. |
+| **[Workspace switching](#controls)** | *Next workspace* and *Previous workspace* actions for any trigger or shortcut. On scroll they move one workspace per wheel notch and stop at the first and last. |
+| **[Fedora install](#fedora)** | The packages to build it on Fedora, where this fork is developed and used. |
+
+Report anything about these to
+[this repository](https://github.com/huynhthanhtien/atoll/issues).
 
 <br>
 
@@ -129,8 +152,9 @@ Open it with a middle click, or give it any trigger or shortcut you like under
 Every way of telling the island to do something lives on one page. Click,
 double click, middle click, right click, press and hold, scroll up, scroll down
 and resting the pointer can each carry **any** action: open the dashboard, open
-the Claude office, ask the assistant, play or skip, change the volume, start a
-focus session, toggle do-not-disturb, or open the settings.
+the Claude office, ask the assistant, play or skip, change the volume, switch
+workspace, show kept files, start a focus session, toggle do-not-disturb, or
+open the settings.
 
 Each action can also get a **system-wide keyboard shortcut**, recorded right on
 the page. Shortcuts are registered with KDE's global shortcut service, so they
@@ -174,7 +198,7 @@ every page.
 ### Arch, in one go
 
 ```sh
-git clone https://github.com/jojo2k7/atoll.git
+git clone https://github.com/huynhthanhtien/atoll.git
 cd atoll
 ./scripts/install.sh
 ```
@@ -184,13 +208,22 @@ island as a user service, so it comes back with every login. It asks before it
 installs the optional extras, and the only step it runs as root is the install
 itself.
 
-From the AUR, once it is published there: `yay -S atoll` for a release, or
-`yay -S atoll-git` to follow the development branch. Both PKGBUILDs live in
-[`packaging/`](packaging).
+### Fedora
+
+`scripts/install.sh` only knows `pacman`, so on Fedora install the dependencies
+first and then build as under [By hand](#by-hand):
+
+```sh
+sudo dnf install cmake ninja-build extra-cmake-modules \
+    qt6-qtbase-devel qt6-qtbase-private-devel qt6-qtdeclarative-devel \
+    qt6-qtmultimedia-devel qt6-qtsvg-devel qt6-qtshadertools-devel \
+    kf6-kcoreaddons-devel kf6-ki18n-devel kf6-kglobalaccel-devel \
+    layer-shell-qt-devel dbus-devel wayland-devel pipewire-devel
+```
 
 ### By hand
 
-Dependencies: `qt6-base qt6-declarative qt6-svg layer-shell-qt kcoreaddons ki18n dbus wayland`,
+Dependencies, by their Arch names: `qt6-base qt6-declarative qt6-svg layer-shell-qt kcoreaddons ki18n dbus wayland`,
 plus `cmake ninja qt6-shadertools extra-cmake-modules wayland` to build
 (`wayland-scanner` generates the lock-screen protocol; without it everything
 else still builds).
@@ -234,7 +267,7 @@ assistant, whose permission gate is the installed binary itself.
 | **Media** | Album art, scrolling title, album, spectrum, and transport controls that fade in on hover. While synced lyrics exist, the second line becomes the words being sung. |
 | **Expanded** | Clock, battery, seekable transport, a scrolling lyrics panel, notification history and quick toggles, on one tab - and today's calendar on the other. |
 | **Calendar** | Point Atoll at an ICS feed and the dashboard's second tab fills with today's events. The pill mentions the next one when it is less than an hour away. |
-| **Sharing** | Drag files onto the island and it turns into a drop target, then a list of the devices nearby. Files coming the other way ask before they land. |
+| **Sharing** | Drag files onto the island, let go over **Share**, and it turns into a list of the devices nearby. Files coming the other way ask before they land. |
 | **Assistant** | Hold the island. The screen edges light up, a question box opens, and Claude or Gemini answers — and, one permission at a time, does the thing. When it needs a decision from you, the answers arrive as buttons on the island. |
 
 ### How it gets its information
@@ -461,6 +494,27 @@ parking stray thoughts. Start one from the dashboard, with the `focus` action,
 or with `atollctl focus start`. Configure it under **Settings → Focus**. See
 [Focus sessions](docs/focus.md) for the details.
 
+## To-do list
+
+The dashboard has a **Todo** tab: type a task and press Enter to add it, click
+it to mark it done, and hover it to delete it. The list is kept in `todos.json`
+in Atoll's data directory, and the tab stays hidden while the session is locked.
+Turn it off under **Settings → Content → To-do list** (`modules.todo`).
+
+## Keeping files on the island
+
+Dragging files over the island splits it in two: let go over **Keep here** and
+they stay parked on it, let go over **Share** and they go to nearby devices. A
+parked file shows as an icon and a count on the resting island, so you can move
+to another window, rest the pointer on the island to open the shelf, and drag
+the file out. Dragging out copies, and whatever lands somewhere leaves the shelf.
+
+Only the addresses are held: nothing is copied, and the list is gone when Atoll
+stops. While files are parked, resting the pointer opens them instead of the
+player. `atollctl keep <file>...` parks files from a script, the **Show kept
+files** action opens the shelf from a shortcut, and **Settings → Content → Kept
+files** (`modules.shelf`) turns all of it off.
+
 ## Audio output selection
 
 Choose the system audio output directly in the island or hover player, including
@@ -501,6 +555,7 @@ general purpose heads-up display for your own scripts:
 atollctl text drive-harddisk "Backup finished"
 atollctl progress cloud-upload 64 "Uploading"
 atollctl share ~/Pictures/holiday.jpg
+atollctl keep ~/Downloads/report.pdf
 atollctl ask "why is my laptop fan so loud"
 atollctl screenshot DP-1
 atollctl screens
@@ -537,8 +592,8 @@ atollctl assistant           # open the assistant with an empty box
 ## Sharing files
 
 Drag files - or a whole folder - onto the island. It grows into a drop target
-while the drag is over it, and once the files are dropped it lists the devices
-it can see; click one and they go. Files arriving the other way announce
+while the drag is over it, and once the files are let go over **Share** it lists
+the devices it can see; click one and they go. Files arriving the other way announce
 themselves the same way, with an Accept and a Decline, and land in your
 downloads folder.
 
@@ -576,7 +631,7 @@ How it works, briefly:
 | `sharing.port` | `53317` | HTTP and multicast port. |
 
 `atollctl share <file>...` offers files from a script or a file manager's
-"send to" menu, exactly as if they had been dropped on the island.
+"send to" menu, exactly as if they had been dropped on **Share**.
 
 ## Configuring
 
@@ -660,6 +715,10 @@ and HTTP(S) straight between the two devices. Turn the whole thing off with
 If the island says it cannot watch the session bus, the bus daemon refused
 `BecomeMonitor`; media control still works but OSD and notification mirroring
 do not.
+
+If the island is running but missing after a login, check `island.layer`. On
+`"top"` it can end up underneath a panel that appears after it, while the default
+`"overlay"` stays above panels whatever order they start in.
 
 ## Known limitations
 
